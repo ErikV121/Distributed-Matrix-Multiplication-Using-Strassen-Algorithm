@@ -1,3 +1,5 @@
+package V1;
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -34,10 +36,10 @@ public class MyClient {
         }
     }
 
-    public MyClient(String server, int portnum, ArrayList<int[][]> givenList) {
+    public MyClient(String server, int port, ArrayList<int[][]> givenList) {
         try {
             serverName = server;
-            s = new Socket(serverName, portnum);
+            s = new Socket(serverName, port);
             System.out.println(s);
             list = givenList;
             startTime = System.currentTimeMillis();
