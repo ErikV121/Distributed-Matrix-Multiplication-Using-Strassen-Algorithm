@@ -24,59 +24,69 @@ public class Main {
                 int choice = Integer.parseInt(scanner.nextLine());
                 switch (choice) {
                     case 1 -> {
-                        System.out.println("Create matrices first\n");
-                        createRandomMatrixCase(scanner);
-
-                        System.out.println("Starting Primary Client");
-
-                        System.out.println("Enter IP address of Server Router:");
-                        String ip = "localhost";//scanner.nextLine();
-
-                        System.out.println("Enter port number of Server Router:");
-                        int port = 123; //Integer.parseInt(scanner.nextLine());
-
-                        PrimaryClient primaryClient = new PrimaryClient(matrices);
-                        primaryClient.start(ip, port);
+                        handlePrimaryClient(scanner);
                         return;
                     }
-
                     case 2 -> {
-                        System.out.println("Starting Secondary Client");
-
-                        System.out.println("Enter IP address of Server Router:");
-                        String ip = scanner.nextLine();
-
-                        System.out.println("Enter port number of Server Router:");
-                        int port = Integer.parseInt(scanner.nextLine());
-
-                        SecondaryClient secondaryClient = new SecondaryClient();
+                        handleSecondaryClient(scanner);
                     }
-
                     case 3 -> {
-                        System.out.println("Starting Server Router");
-
-                        System.out.println("Enter post number Server Router should listen on:");
-                        int port = 123; //Integer.parseInt(scanner.nextLine());
-                        ServerRouter serverRouter = new ServerRouter(port);
-
+                        handleServerRouter(scanner);
                         return;
                     }
-
                     case 4 -> {
                         System.out.println("Exiting...");
                         return;
                     }
-
                     default -> System.out.println("Invalid choice. Please try again.");
                 }
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
     }
 
+    public static void handlePrimaryClient(Scanner scanner) {
+        System.out.println("Create matrices first\n");
+        createRandomMatrixCase(scanner);
 
-    public static void createRandomMatrixCase(Scanner scanner) throws InterruptedException {
+        System.out.println("Starting Primary Client");
+
+        System.out.println("Enter IP address of Server Router:");
+        String ip = scanner.nextLine();
+
+        System.out.println("Enter port number of Server Router:");
+        int port = Integer.parseInt(scanner.nextLine());
+
+        PrimaryClient primaryClient = new PrimaryClient(matrices);
+        primaryClient.start(ip, port);
+    }
+
+    public static void handleSecondaryClient(Scanner scanner) {
+        System.out.println("Starting Secondary Client");
+
+        System.out.println("Enter IP address of Server Router:");
+        String ip = scanner.nextLine();
+
+        System.out.println("Enter port number of Server Router:");
+        int port = Integer.parseInt(scanner.nextLine());
+
+        SecondaryClient secondaryClient = new SecondaryClient();
+        secondaryClient.start(ip, port);
+    }
+
+    public static void handleServerRouter(Scanner scanner) {
+        System.out.println("Starting Server Router");
+
+        System.out.println("Enter post number Server Router should listen on:");
+        int port = Integer.parseInt(scanner.nextLine());
+        ServerRouter serverRouter = new ServerRouter();
+        Thread t1 = new Thread(() -> {
+            serverRouter.startServer1(port);
+        });
+        t1.start();
+    }
+
+
+    public static void createRandomMatrixCase(Scanner scanner) {
         System.out.println("How many matrices do you want to create?");
         int matrixCount = Integer.parseInt(scanner.nextLine());
 
@@ -84,7 +94,7 @@ public class Main {
         int matrixSize = Integer.parseInt(scanner.nextLine());
 
         System.out.println("Creating randomized matrices...");
-        Thread.sleep(2000);
+
 
         StrassenAlgorithmUtil.generateRandomMatrices(matrices, matrixCount, matrixSize);
         System.out.println("Matrices created");
