@@ -3,9 +3,16 @@ package V2;
 import V2.util.StrassenAlgorithmUtil;
 
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executors;
 
 public class ServerRouter {
@@ -14,11 +21,10 @@ public class ServerRouter {
 
     private boolean run = true;
 
-    public ServerRouter(int port) {
-        start(port);
+    public ServerRouter() {
     }
 
-    public void start(final int port) {
+    public void startServer1(final int port) {
         System.out.println("Server Router will be begin listening on port: " + port);
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
@@ -35,7 +41,62 @@ public class ServerRouter {
                 }
             }
         } catch (IOException e) {
-            System.out.println("Server socket error: " + e.getMessage());
+            System.out.println("ServerRouter socket error: " + e.getMessage());
+        }
+    }
+
+
+    public void startServer2(int port) {
+        //        TODO create a non blocking server  which can handle multiple clients
+//         what going to happen is primary client will send matrices to server
+//
+//        TODO server2 will already start and have clients connected
+//         using virtual threads im assuming
+//         begin strassen algorithm
+//         consider base case : 2 matrices,
+//         now real 2 4x4,
+        System.out.println("Starting NIO server on port " + port);
+        Set<SocketChannel> clients = new HashSet<SocketChannel>();
+
+        try (ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+             Selector selector = Selector.open();) {
+
+            serverSocketChannel.configureBlocking(false);
+            serverSocketChannel.bind(new InetSocketAddress(port));
+            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+            while (true) {
+                if (selector.select() == 0) {
+                    continue;
+                }
+
+                for (SelectionKey key : selector.selectedKeys()) {
+                    if (key.isAcceptable()) {
+                        if (key.channel() instanceof ServerSocketChannel channel) {
+                            SocketChannel client = channel.accept();
+                            Socket socket = client.socket();
+                            String clientInfo = socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
+                            System.out.println("Client connected: " + clientInfo);
+
+                            client.configureBlocking(false);
+                            client.register(selector, SelectionKey.OP_READ, clientInfo);
+                            clients.add(client);
+                        }
+                    }
+                }
+                selector.selectedKeys().clear();
+            }
+
+        } catch (IOException e) {
+            System.out.println("Error starting NIO server: " + e.getMessage());
+        } finally {
+            for (SocketChannel client : clients) {
+                try {
+                    client.close();
+                } catch (IOException e) {
+                    System.out.println("Error closing client socket: " + e.getMessage());
+                }
+            }
         }
     }
 
@@ -79,7 +140,7 @@ public class ServerRouter {
 
 
         } catch (IOException e) {
-            System.out.println("Error: " + e.getMessage());
+            System.out.println("ServerRouter Error: " + e.getMessage());
         }
     }
 
@@ -98,5 +159,4 @@ public class ServerRouter {
             System.out.println("Unknown client type: " + clientMessage);
         }
     }
-
 }
