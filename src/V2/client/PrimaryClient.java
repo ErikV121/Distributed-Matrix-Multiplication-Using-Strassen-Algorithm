@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 public class PrimaryClient {
-    private final ArrayList<int[][]> matrices;
+    public final ArrayList<int[][]> matrices;
     private final ClientConnection connection;
 
     public PrimaryClient(ArrayList<int[][]> matrices) {
@@ -13,8 +13,8 @@ public class PrimaryClient {
     }
 
 
-    public void start(String ipAddress, int port) {
-        connection.connect(ipAddress, port, this::sendMatrices);
+    public void start(String ip, int port) {
+        connection.connect(ip, port, new PrimaryProtocol(matrices)); // writes "PRIMARY" first
     }
 
     public void sendMatrices(DataOutputStream dataWriter, DataInputStream dataReader) throws IOException {
@@ -39,9 +39,28 @@ public class PrimaryClient {
         dataWriter.flush();
     }
 
-    public void receiveServerInfo(DataInputStream dataReader) throws IOException {
-        for (String input; !(input = dataReader.readUTF()).isEmpty(); ) {
-            System.out.println("Server: " + input);
-        }
+    public void receiveServerInfo(DataInputStream dataReader)  {
+//        TODO the issue here is it read until there is empty input, but we want it to read until the stream is closed
+//        for (String input; !(input = dataReader.readUTF()).isEmpty(); ) {
+//            System.out.println("Server: " + input);
+//        }
+
+
+            try {
+                while (true) {
+                    String input = dataReader.readUTF();
+                    System.out.println("Server: " + input);
+
+                    if (input.equalsIgnoreCase("Quit")) {
+                        System.out.println("quitting stream");
+                        break;
+                    }
+                }
+
+            } catch (IOException e) {
+                System.out.println("End of server messages.");
+            }
+
+
     }
 }

@@ -1,3 +1,4 @@
+// V2/client/ClientConnection.java
 package V2.client;
 
 import java.io.DataInputStream;
@@ -12,20 +13,22 @@ public class ClientConnection {
         this.clientType = clientType;
     }
 
-    public void connect(String ipAddress, int port, ClientDataHandler dataHandler) {
+    public void connect(String ipAddress, int port, ConnectionHandler handler) {
         try (Socket socket = new Socket(ipAddress, port);
-             DataOutputStream dataWriter = new DataOutputStream(socket.getOutputStream());
-             DataInputStream dataReader = new DataInputStream(socket.getInputStream())) {
+             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+             DataInputStream in = new DataInputStream(socket.getInputStream())) {
 
             System.out.println("Client Socket created successfully");
 
-            dataWriter.writeUTF(clientType);
+            // handshake: announce role (PRIMARY / SECONDARY)
+            out.writeUTF(clientType);
+            out.flush();
 
-            dataHandler.handleData(dataWriter, dataReader);
+            // delegate to protocol implementation
+            handler.handle(out, in);
 
         } catch (IOException e) {
             System.out.println("Error: " + e.getMessage());
         }
-
     }
 }
