@@ -1,25 +1,20 @@
 # Distributed Matrix Multiplication Using Strassen's Algorithm
 
-## Overview
-This project implements a distributed system for performing matrix multiplication using Strassen's algorithm. It consists of three main components:
+## Version Comparison
 
-1. **MyClient** - Generates matrices and communicates with the server.
-2. **ServerRouter** - Routes clients to an available server.
-3. **MyServer** - Handles matrix multiplication using Strassen's algorithm and multithreading.
+### V1
+- Implemented basic Strassen's algorithm on a single PC
+- Fixed due to readability and maintainability issues
+- Successfully performed matrix multiplication but lacked scalability
 
-## Features
-- Uses a client-server model for distributed computation.
-- Implements Strassen's algorithm for matrix multiplication.
-- Supports multithreading for parallel computation.
-- Includes a router to manage multiple client-server connections.
+### V2 (Current)
+- Major refactoring for improved code readability
+- Better structure with separation of concerns
+- More modular design for easier maintenance
+- **Planned Improvements:**
+    - Dynamic workload allocation based on available worker nodes
+    - Improved performance through parallel processing
 
-## File Structure
-- `MyClient.java` - Sends matrices to the server and receives results.
-- `ServerRouter.java` - Routes client requests to the appropriate server.
-- `MyServer.java` - Processes matrix multiplications and returns results.
-
-## How It Works
-1. The **client** generates a set of matrices and connects to the **ServerRouter**.
-2. The **ServerRouter** directs the client to an available **server**.
-3. The **server** performs the matrix multiplication using Strassen's algorithm.
-4. The result is sent back to the **client**, which calculates execution time and efficiency.
+## Project Status
+V2 is currently under development... While more structured and readable than V1, the distributed 
+implementation of Strassen's algorithm across multiple computers is still being implemented.
