@@ -1,14 +1,17 @@
 package V2;
 
-import V2.client.PrimaryClient;
-import V2.client.SecondaryClient;
-import V2.util.StrassenAlgorithmUtil;
+import V2.client.primary.PrimaryClient;
+import V2.client.secondary.SecondaryClient;
 
 import java.util.ArrayList;
 import java.util.Scanner;
 
+
 public class Main {
     static ArrayList<int[][]> matrices = new ArrayList<>();
+//    only support squared matrices for now
+    static int matrixSize;
+    static int matrixAmount;
 
     public static void main(String[] args) {
         try (Scanner scanner = new Scanner(System.in)) {
@@ -51,12 +54,16 @@ public class Main {
         System.out.println("Starting Primary Client");
 
         System.out.println("Enter IP address of Server Router:");
-        String ip = scanner.nextLine();
+//        String ip = scanner.ne
+//        TODO for testing
+        String ip = "localhost";
 
         System.out.println("Enter port number of Server Router:");
-        int port = Integer.parseInt(scanner.nextLine());
+//        int port = Integer.parseInt(scanner.nextLine());
+        // TODO for testing
+        int port = 3000;
 
-        PrimaryClient primaryClient = new PrimaryClient(matrices);
+        PrimaryClient primaryClient = new PrimaryClient(matrices, matrixSize, matrixAmount );
         primaryClient.start(ip, port);
     }
 
@@ -64,10 +71,13 @@ public class Main {
         System.out.println("Starting Secondary Client");
 
         System.out.println("Enter IP address of Server Router:");
-        String ip = scanner.nextLine();
+//        String ip = scanner.nextLine();
+        String ip = "localhost";
 
         System.out.println("Enter port number of Server Router:");
-        int port = Integer.parseInt(scanner.nextLine());
+//        int port = Integer.parseInt(scanner.nextLine());
+        int port = 3001;
+
 
         SecondaryClient secondaryClient = new SecondaryClient();
         secondaryClient.start(ip, port);
@@ -76,33 +86,40 @@ public class Main {
     public static void handleServerRouter(Scanner scanner) {
         System.out.println("Starting Server Router");
 
-        System.out.println("Enter post number Server Router should listen on:");
-        int port = Integer.parseInt(scanner.nextLine());
+        System.out.println("Enter port number Server Router should listen on:");
+//        int port = Integer.parseInt(scanner.nextLine());
+        // TODO for testing purposes
+        int port = 3000;
         ServerRouter serverRouter = new ServerRouter();
         Thread t1 = new Thread(() -> {
             serverRouter.startServer1(port);
         });
+
+        Thread t2 = new Thread(() -> {
+            serverRouter.startServer2(port + 1);
+        });
+        System.out.println("t1 running");
         t1.start();
+        System.out.println("t2 running");
+        t2.start();
     }
 
 
     public static void createRandomMatrixCase(Scanner scanner) {
         System.out.println("How many matrices do you want to create?");
-        int matrixCount = Integer.parseInt(scanner.nextLine());
+        matrixAmount = Integer.parseInt(scanner.nextLine());
 
         System.out.println("how big do you want these matrices to be?");
-        int matrixSize = Integer.parseInt(scanner.nextLine());
+        matrixSize = Integer.parseInt(scanner.nextLine());
 
         System.out.println("Creating randomized matrices...");
 
 
-        StrassenAlgorithmUtil.generateRandomMatrices(matrices, matrixCount, matrixSize);
+        StrassenAlgorithmUtil.generateRandomMatrices(matrices, matrixAmount, matrixSize);
         System.out.println("Matrices created");
 
-        for (int i = 0; i < matrices.size(); i++) {
-            System.out.println("Matrix " + (i + 1) + ":");
-            StrassenAlgorithmUtil.printMatrix(matrices.get(i));
-        }
+//        to print all matrices
+        StrassenAlgorithmUtil.printMatricesList(matrices);
     }
 }
 
