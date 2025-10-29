@@ -1,25 +1,25 @@
 package V2;
 
-import V2.util.StrassenAlgorithmUtil;
+import V2.util.Opcode;
+import V2.util.ProcedureFlag;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 
 public class ServerRouter {
-    private ArrayList<Socket> secondaryClientSockets = new ArrayList<>();
-    private ArrayList<int[][]> matrices = new ArrayList<>();
-
+    private final Set<SocketChannel> secondaryClients = new HashSet<>();
+    private final ArrayList<int[][]> matrices = new ArrayList<>();
     private boolean run = true;
+    private Opcode strategyType;
 
     public ServerRouter() {
     }
@@ -31,12 +31,22 @@ public class ServerRouter {
             try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 while (run) {
                     Socket clientSocket = serverSocket.accept();
+                    clientSocket.setKeepAlive(true);
+                    clientSocket.setTcpNoDelay(true);
 
-                    // creates a new v thread for each client
+                    System.out.println("socket alive: " + clientSocket.getKeepAlive());
+                    System.out.println("socket no delay: " + clientSocket.getTcpNoDelay());
+
+                    // creates a new v thread for each P client
+//                    TODO currently only supports 1 P client at a time
                     executor.submit(() -> {
-                        handleInputStream(clientSocket);
-
-
+                        handleInputStream(clientSocket, EnumSet.of(
+                                ProcedureFlag.CHECK_CLIENT_TYPE,
+                                ProcedureFlag.RECEIVE_STRATEGY_TYPE,
+                                ProcedureFlag.PRINT_CLIENT_INFO,
+                                ProcedureFlag.RECEIVE_MATRICES,
+                                ProcedureFlag.PRINT_MATRICES,
+                                ProcedureFlag.TEST_SERVER_TO_CLIENT));
                     });
                 }
             }
@@ -47,16 +57,9 @@ public class ServerRouter {
 
 
     public void startServer2(int port) {
-        //        TODO create a non blocking server  which can handle multiple clients
-//         what going to happen is primary client will send matrices to server
-//
-//        TODO server2 will already start and have clients connected
-//         using virtual threads im assuming
-//         begin strassen algorithm
-//         consider base case : 2 matrices,
-//         now real 2 4x4,
+
         System.out.println("Starting NIO server on port " + port);
-        Set<SocketChannel> clients = new HashSet<SocketChannel>();
+//        Set<SocketChannel> clients = new HashSet<>();
 
         try (ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
              Selector selector = Selector.open();) {
@@ -69,7 +72,6 @@ public class ServerRouter {
                 if (selector.select() == 0) {
                     continue;
                 }
-
                 for (SelectionKey key : selector.selectedKeys()) {
                     if (key.isAcceptable()) {
                         if (key.channel() instanceof ServerSocketChannel channel) {
@@ -77,10 +79,13 @@ public class ServerRouter {
                             Socket socket = client.socket();
                             String clientInfo = socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
                             System.out.println("Client connected: " + clientInfo);
-
                             client.configureBlocking(false);
+
+                            // Check client type using NIO
+                            checkClientType(client);
+
+                            // Register for future read operations
                             client.register(selector, SelectionKey.OP_READ, clientInfo);
-                            clients.add(client);
                         }
                     }
                 }
@@ -90,7 +95,7 @@ public class ServerRouter {
         } catch (IOException e) {
             System.out.println("Error starting NIO server: " + e.getMessage());
         } finally {
-            for (SocketChannel client : clients) {
+            for (SocketChannel client : secondaryClients) {
                 try {
                     client.close();
                 } catch (IOException e) {
@@ -119,44 +124,93 @@ public class ServerRouter {
 
     }
 
-    public void handleInputStream(Socket clientSocket) {
-        try (DataInputStream dataReader = new DataInputStream(clientSocket.getInputStream())) {
+//    so the order of the if statements matter here
+    public void handleInputStream(Socket clientSocket, EnumSet<ProcedureFlag> procedureFlags) {
+        try (DataInputStream dataReader = new DataInputStream(clientSocket.getInputStream());
+             DataOutputStream dataWriter = new DataOutputStream(clientSocket.getOutputStream());) {
 
-            String clientAddress = clientSocket.getInetAddress().getHostAddress();
-            String clientPort = String.valueOf(clientSocket.getPort());
-
-            System.out.println("client: " + clientAddress + ":" + clientPort + " connected\n");
-
-            //checks first and only the first line of the input stream for client type
-            checkClientType(clientSocket, dataReader);
-            receiveMatrices(clientSocket, dataReader, matrices);
-
-            for (int i = 0; i < matrices.size(); i++) {
-                System.out.println("Matrix " + (i + 1) + ":");
-                StrassenAlgorithmUtil.printMatrix(matrices.get(i));
+            if (procedureFlags.contains(ProcedureFlag.CHECK_CLIENT_TYPE)) {
+                checkClientType(clientSocket, dataReader);
             }
-
-//          TODO returnInfo() //returns information to Primary Client regarding available secondary clients and more...
-
-
-        } catch (IOException e) {
-            System.out.println("ServerRouter Error: " + e.getMessage());
+            if (procedureFlags.contains(ProcedureFlag.RECEIVE_STRATEGY_TYPE)) {
+                receiveStrategyType(dataReader);
+            }
+            if (procedureFlags.contains(ProcedureFlag.PRINT_CLIENT_INFO)) {
+                String clientAddress = clientSocket.getInetAddress().getHostAddress();
+                String clientPort = String.valueOf(clientSocket.getPort());
+                System.out.println("client: " + clientAddress + ":" + clientPort + " connected\n");
+            }
+            if (procedureFlags.contains(ProcedureFlag.RECEIVE_MATRICES)) {
+                receiveMatrices(clientSocket, dataReader, matrices);
+            }
+            if (procedureFlags.contains(ProcedureFlag.PRINT_MATRICES)) {
+                printMatrices(matrices);
+            }
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Error in ServerRouter: " + e.getMessage());
         }
     }
 
-    //    TODO prevent multiple primary clients from connecting
-    public void checkClientType(Socket clientSocket, DataInputStream dataReader) throws IOException {
-        String clientMessage = dataReader.readUTF();
-        if (clientMessage.equals("PRIMARY")) {
-            System.out.println("Primary client connected\n");
 
-        } else if (clientMessage.equals("SECONDARY")) {
+    // For blocking I/O p clients
+    // socket is for future plans to allow multiple p clients
+    public void checkClientType(Socket socket, DataInputStream dataReader) throws IOException {
+        byte clientMessage = dataReader.readByte();
+        if (clientMessage == 4) {
+            System.out.println("Primary client connected\n");
+        } else if (clientMessage == 5) {
             System.out.println("Secondary client connected\n");
-            secondaryClientSockets.add(clientSocket);
-            System.out.println("Secondary client added to list: " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort());
+        } else {
+            System.out.println("ERROR Unknown client type: " + clientMessage);
+        }
+    }
+
+    // For NIO socket clients
+    public void checkClientType(SocketChannel socketChannel) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(1);
+        socketChannel.read(buffer);
+        buffer.flip();
+        byte clientMessage = buffer.get();
+
+        if (clientMessage == 1) {
+            System.out.println("Primary client connected\n");
+        } else if (clientMessage == 2) {
+            System.out.println("Secondary client connected\n");
+            secondaryClients.add(socketChannel);
+            System.out.println("Secondary client added to list: " + socketChannel.getLocalAddress().toString());
 
         } else {
-            System.out.println("Unknown client type: " + clientMessage);
+            System.out.println("ERROR Unknown client type: " + clientMessage);
+        }
+    }
+
+    private static void printMatrices(List<int[][]> matrices) {
+        for (int i = 0; i < matrices.size(); i++) {
+            System.out.println("Matrix " + (i + 1) + ":");
+            StrassenAlgorithmUtil.printMatrix(matrices.get(i));
+        }
+    }
+
+    private void receiveStrategyType(DataInputStream dataReader) throws IOException, InterruptedException {
+        int strategy = dataReader.readInt();
+        switch (strategy) {
+            case 1 -> {
+                strategyType = Opcode.SINGLE_WORKER;
+                System.out.println("Strategy selected: SINGLE WORKER");
+            }
+            case 2 -> {
+                strategyType = Opcode.JOB_LEADER;
+                System.out.println("Strategy selected: JOB LEADER");
+            }
+            case 3 -> {
+                strategyType = Opcode.IDK_WHAT_TO_CALL_THIS;
+                System.out.println("Strategy selected: IDK WHAT TO CALL THIS");
+            }
+            default -> {
+                System.out.println("ERROR: Unknown strategy type: " + strategy);
+                throw new IllegalArgumentException("Unknown strategy type: " + strategy);
+            }
         }
     }
 }
+
