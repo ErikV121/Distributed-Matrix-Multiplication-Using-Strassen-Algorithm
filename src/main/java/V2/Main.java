@@ -10,7 +10,7 @@ import java.util.Scanner;
 public class Main {
     static ArrayList<int[][]> matrices = new ArrayList<>();
 //    only support squared matrices for now
-    static int matrixSize;
+static int matrixSize;
     static int matrixAmount;
 
     public static void main(String[] args) {
@@ -86,23 +86,28 @@ public class Main {
     public static void handleServerRouter(Scanner scanner) {
         System.out.println("Starting Server Router");
 
-        System.out.println("Enter port number Server Router should listen on:");
-//        int port = Integer.parseInt(scanner.nextLine());
-        // TODO for testing purposes
+        // int port = Integer.parseInt(scanner.nextLine());
         int port = 3000;
-        ServerRouter serverRouter = new ServerRouter();
-        Thread t1 = new Thread(() -> {
-            serverRouter.startServer1(port);
-        });
 
-        Thread t2 = new Thread(() -> {
-            serverRouter.startServer2(port + 1);
-        });
-        System.out.println("t1 running");
-        t1.start();
-        System.out.println("t2 running");
-        t2.start();
+        ServerRouter serverRouter = new ServerRouter();
+
+        // Start each accept loop on its own virtual thread
+        Thread v1 = Thread.ofVirtual()
+                .name("server1")
+                .start(() -> serverRouter.startServer1(port));
+
+        Thread v2 = Thread.ofVirtual()
+                .name("server2")
+                .start(() -> serverRouter.startServer2(port + 1));
+
+        try {
+            v1.join();
+            v2.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
+
 
 
     public static void createRandomMatrixCase(Scanner scanner) {
@@ -118,8 +123,7 @@ public class Main {
         StrassenAlgorithmUtil.generateRandomMatrices(matrices, matrixAmount, matrixSize);
         System.out.println("Matrices created");
 
-//        to print all matrices
-        StrassenAlgorithmUtil.printMatricesList(matrices);
+        StrassenAlgorithmUtil.printMatrixList(matrices);
     }
 }
 
