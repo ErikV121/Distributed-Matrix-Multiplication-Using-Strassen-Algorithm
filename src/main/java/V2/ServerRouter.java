@@ -13,7 +13,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.*;
-import java.util.concurrent.Executors;
 
 public class ServerRouter {
     private final Set<SocketChannel> secondaryClients = new HashSet<>();
@@ -28,7 +27,7 @@ public class ServerRouter {
         System.out.println("Server Router will be begin listening on port: " + port);
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+//            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 while (run) {
                     Socket clientSocket = serverSocket.accept();
                     clientSocket.setKeepAlive(true);
@@ -39,7 +38,7 @@ public class ServerRouter {
 
                     // creates a new v thread for each P client
 //                    TODO currently only supports 1 P client at a time
-                    executor.submit(() -> {
+//                    executor.submit(() -> {
                         handleInputStream(clientSocket, EnumSet.of(
                                 ProcedureFlag.CHECK_CLIENT_TYPE,
                                 ProcedureFlag.RECEIVE_STRATEGY_TYPE,
@@ -47,9 +46,9 @@ public class ServerRouter {
                                 ProcedureFlag.RECEIVE_MATRICES,
                                 ProcedureFlag.PRINT_MATRICES,
                                 ProcedureFlag.TEST_SERVER_TO_CLIENT));
-                    });
+//                    });
                 }
-            }
+//            }
         } catch (IOException e) {
             System.out.println("ServerRouter socket error: " + e.getMessage());
         }
@@ -124,7 +123,6 @@ public class ServerRouter {
 
     }
 
-//    so the order of the if statements matter here
     public void handleInputStream(Socket clientSocket, EnumSet<ProcedureFlag> procedureFlags) {
         try (DataInputStream dataReader = new DataInputStream(clientSocket.getInputStream());
              DataOutputStream dataWriter = new DataOutputStream(clientSocket.getOutputStream());) {

@@ -1,4 +1,4 @@
-package V2.util;
+package V2;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -114,6 +114,13 @@ public class StrassenAlgorithmUtil {
                 System.out.print(value + " ");
             }
             System.out.println();
+        }
+    }
+
+    public static void printMatrixList(ArrayList<int[][]> matrices) {
+        for (int i = 0; i < matrices.size(); i++) {
+            System.out.println("Matrix " + (i + 1) + ":");
+            printMatrix(matrices.get(i));
         }
     }
 }
