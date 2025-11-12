@@ -70,9 +70,12 @@ public class MyServer {
             int mid = list.size() / 2;
             ArrayList<int[][]> firstHalf = new ArrayList<>(list.subList(0, mid));
             ArrayList<int[][]> secondHalf = new ArrayList<>(list.subList(mid, list.size()));
+
+//            TODO
             
             // Create a thread pool
-            ExecutorService executor = Executors.newFixedThreadPool(2);
+//            ExecutorService executor = Executors.newFixedThreadPool(2);
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
             Future<ArrayList<int[][]>> future1 = executor.submit(() -> processArrayList(firstHalf));
             Future<ArrayList<int[][]>> future2 = executor.submit(() -> processArrayList(secondHalf));
             
