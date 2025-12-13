@@ -5,12 +5,12 @@ import V2.util.Opcode;
 import java.util.ArrayList;
 
 public class PrimaryClient {
-    public final ArrayList<int[][]> matrices;
+    public final ArrayList<long[][]> matrices;
     private final ClientConnection connection;
     private final int matrixSize;
     private final int matrixCount;
 
-    public PrimaryClient(ArrayList<int[][]> matrices, int size, int amount) {
+    public PrimaryClient(ArrayList<long[][]> matrices, int size, int amount) {
         this.matrices = matrices;
         this.matrixSize = size;
         this.matrixCount = amount;
