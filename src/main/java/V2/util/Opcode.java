@@ -21,6 +21,13 @@ public enum Opcode {
         this.code = code;
     }
 
+    public static Opcode fromCode(int code) {
+        for (Opcode op : values()) {
+            if (op.getCode() == code) return op;
+        }
+        return null;
+    }
+
     public int getCode() {
         return code;
     }
