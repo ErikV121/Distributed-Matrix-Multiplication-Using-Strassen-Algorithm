@@ -1,6 +1,8 @@
 package V2.client;
 
 import V2.util.Opcode;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -8,6 +10,9 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class ClientConnection {
+
+    private static final Logger LOGGER = LogManager.getLogger();
+
     private final int clientType;
     private Socket socket;
     private DataOutputStream out;
@@ -27,7 +32,7 @@ public class ClientConnection {
             socket.setSoTimeout(10000000);
             socket.setTcpNoDelay(true);
 
-            System.out.println("Client Socket created successfully");
+            LOGGER.info("Client Socket created successfully");
 
             out.writeByte(clientType);
             out.flush();
@@ -35,7 +40,7 @@ public class ClientConnection {
             handler.handle(out, in);
 
         } catch (IOException e) {
-            System.out.println("Connection Error: " + e.getMessage());
+            LOGGER.error("Connection Error: ", e);
             close();
         }
     }
@@ -45,9 +50,9 @@ public class ClientConnection {
             if (in != null) in.close();
             if (out != null) out.close();
             if (socket != null) socket.close();
-            System.out.println("Connection closed.");
+            LOGGER.info("Connection closed.");
         } catch (IOException e) {
-            System.out.println("Error while closing connection: " + e.getMessage());
+            LOGGER.error("Error while closing connection: {}", e.getMessage());
         }
     }
 
