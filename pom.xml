@@ -9,8 +9,15 @@
     <name>Distributed Matrix Multiplication Using Strassen's Algorithm</name>
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
+        <exec.mainClass>V2.Main</exec.mainClass>
     </properties>
+    <packaging>jar</packaging>
     <dependencies>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.25.2</version>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -23,17 +30,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-
-
-                <!--                <configuration>-->
-                <!--                    <archive>-->
-                <!--                        <manifest>-->
-                <!--                            <mainClass>-->
-                <!--                                Distributed Matrix Multiplication Using Strassen Algorithm-->
-                <!--                            </mainClass>-->
-                <!--                        </manifest>-->
-                <!--                    </archive>-->
-                <!--                </configuration>-->
+                                <configuration>
+                                    <archive>
+                                        <manifest>
+                                            <mainClass>${exec.mainClass}
+                                            </mainClass>
+                                        </manifest>
+                                    </archive>
+                                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
