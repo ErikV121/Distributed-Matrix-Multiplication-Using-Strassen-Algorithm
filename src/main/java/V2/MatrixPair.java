@@ -1,4 +1,6 @@
 package V2;
 
-public record MatrixPair(int[][] matrixA, int[][] matrixB) {
+import java.io.Serializable;
+
+public record MatrixPair(long[][] matrixA, long[][] matrixB) implements Serializable {
 }
