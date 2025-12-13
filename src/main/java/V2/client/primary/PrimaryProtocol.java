@@ -1,23 +1,28 @@
 package V2.client.primary;
 
+import V2.StrassenAlgorithmUtil;
 import V2.client.ConnectionHandler;
 import V2.util.JobScheduler;
 import V2.util.Opcode;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.util.ArrayList;
 
 public class PrimaryProtocol implements ConnectionHandler {
 
-    private final ArrayList<int[][]> matrices;
+    private static final Logger LOGGER = LogManager.getLogger();
+
+    private final ArrayList<long[][]> matrices;
     private int matrixSize;
     private int matrixCount;
 
-    public PrimaryProtocol(ArrayList<int[][]> matrices) {
+    public PrimaryProtocol(ArrayList<long[][]> matrices) {
         this.matrices = matrices;
     }
 
-    public PrimaryProtocol(ArrayList<int[][]> matrices, int matrixSize, int matrixCount) {
+    public PrimaryProtocol(ArrayList<long[][]> matrices, int matrixSize, int matrixCount) {
         this.matrices = matrices;
         this.matrixSize = matrixSize;
         this.matrixCount = matrixCount;
@@ -33,14 +38,13 @@ public class PrimaryProtocol implements ConnectionHandler {
         Opcode strategy = JobScheduler.getStrategy(matrixSize, matrixCount);
 
         dataWriter.writeInt(strategy.getCode());
-        System.out.println("check what was send Second since client type is first: " + strategy.getCode());
+        LOGGER.info("Selected strategy: {}", strategy.getCode());
 
 
         dataWriter.writeInt(matrices.size());
 
-        // For each matrix in the ArrayList
         for (int i = 0; i < matrices.size(); i++) {
-            int[][] matrix = matrices.get(i);
+            long[][] matrix = matrices.get(i);
             int rows = matrix.length;
             int cols = (rows > 0) ? matrix[0].length : 0;
 
@@ -49,7 +53,7 @@ public class PrimaryProtocol implements ConnectionHandler {
 
             for (int r = 0; r < rows; r++) {
                 for (int c = 0; c < cols; c++) {
-                    dataWriter.writeInt(matrix[r][c]);
+                    dataWriter.writeLong(matrix[r][c]);
                 }
             }
         }
@@ -60,11 +64,30 @@ public class PrimaryProtocol implements ConnectionHandler {
         try {
             while (true) {
                 int serverMessage = dataReader.readInt();
-                System.out.println("Server says: " + serverMessage);
+
+                if (serverMessage == 99) {
+                    LOGGER.info("Receiving final matrix from server...");
+                    int rows = dataReader.readInt();
+                    int cols = dataReader.readInt();
+                    long[][] finalMatrix = new long[rows][cols];
+
+                    for(int r = 0; r < rows; r++) {
+                        for(int c = 0; c < cols; c++) {
+                            finalMatrix[r][c] = dataReader.readLong();
+                        }
+                    }
+
+                    LOGGER.info("Final matrix received from server.");
+                    StrassenAlgorithmUtil.printMatrix(finalMatrix);
+
+                    return;
+                } else {
+                    System.out.println("Server says: " + serverMessage);
+
+                }
             }
         } catch (IOException e) {
-            System.out.println("Server closed the connection.");
+            LOGGER.error("Server closed the connection or finished.");
         }
-
     }
 }
