@@ -2,7 +2,7 @@
 
 This project implements matrix multiplication using Strassen's algorithm, with a focus on a cleaner, more modular design and a distributed architecture.
 
----
+
 
 ## Versions
 
