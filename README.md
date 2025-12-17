@@ -44,7 +44,7 @@ From the project root (where `pom.xml` is located), run:
 mvn clean package
 ```
 
-This will make a JAR named something like:
+This will make a shaded/uber JAR named something like:
 
 ```text
 target/distributed-matrix-1.0-SNAPSHOT.jar
