@@ -55,14 +55,14 @@ public class Main {
         System.out.println("Starting Primary Client");
 
         System.out.println("Enter IP address of Server Router:");
-//        String ip = scanner.nextLine();
+        String ip = scanner.nextLine();
 //        TODO for testing
-        String ip = "localhost";
+//        String ip = "localhost";
 
         System.out.println("Enter port number of Server Router:");
-//        int port = Integer.parseInt(scanner.nextLine());
+        int port = Integer.parseInt(scanner.nextLine());
         // TODO for testing
-        int port = 3000;
+//        int port = 3000;
         t0 = System.nanoTime();
         PrimaryClient primaryClient = new PrimaryClient(matrices, matrixSize, matrixAmount );
         primaryClient.start(ip, port);
@@ -76,12 +76,12 @@ public class Main {
         System.out.println("Starting Secondary Client");
 
         System.out.println("Enter IP address of Server Router:");
-//        String ip = scanner.nextLine();
-        String ip = "localhost";
+        String ip = scanner.nextLine();
+//        String ip = "localhost";
 
         System.out.println("Enter port number of Server Router:");
-//        int port = Integer.parseInt(scanner.nextLine());
-        int port = 3001;
+        int port = Integer.parseInt(scanner.nextLine());
+//        int port = 3001;
 
 
         SecondaryClient secondaryClient = new SecondaryClient();
